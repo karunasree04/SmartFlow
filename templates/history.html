@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>History — ITMS</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.hist-table { width:100%; border-collapse:collapse; font-size:13px; }
+.hist-table th { padding:12px 14px; text-align:left; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
+.hist-table td { padding:13px 14px; border-bottom:1px solid rgba(255,255,255,0.04); color:var(--text); }
+.hist-table tr:hover td { background:rgba(255,255,255,0.02); }
+.badge-green { background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+.badge-red   { background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+.mini-bars   { display:flex; gap:3px; align-items:flex-end; height:28px; }
+.mini-bar    { width:10px; border-radius:3px 3px 0 0; background:rgba(0,212,255,0.5); min-height:3px; }
+.mini-bar.top { background:#22c55e; }
+.empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
+.empty-state .e-icon { font-size:48px; margin-bottom:16px; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <span class="logo-badge">ITMS</span>
+    <div class="logo-texts">
+      <span class="logo-text">Traffic Management</span>
+      <span class="logo-sub">Intelligent Signal Control</span>
+    </div>
+  </a>
+  <ul class="navbar-links">
+    <li><a href="/dashboard">Dashboard</a></li>
+    <li><a href="/history" class="btn-nav">📊 History</a></li>
+    <li><a href="/pathfinder">Path Finder</a></li>
+    <li><a href="/logout">Sign Out</a></li>
+  </ul>
+</nav>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <span class="sidebar-label">Navigation</span>
+    <a href="/dashboard"  class="sidebar-link"><span class="s-icon">🚦</span> Dashboard</a>
+    <a href="/history"    class="sidebar-link active"><span class="s-icon">📊</span> History</a>
+    <a href="/pathfinder" class="sidebar-link"><span class="s-icon">🗺️</span> Path Finder</a>
+    <span class="sidebar-label" style="margin-top:20px;display:block">Account</span>
+    <a href="/logout"     class="sidebar-link"><span class="s-icon">🚪</span> Logout</a>
+  </aside>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1>📊 Analysis History</h1>
+      <p>All past traffic analyses for your account — last 20 records.</p>
+    </div>
+
+    <!-- STATS CARDS -->
+    <div class="result-grid" style="margin-bottom:28px">
+      <div class="result-card">
+        <div class="r-label">Total Analyses</div>
+        <div class="r-value">{{ stats.total }}</div>
+        <div class="r-sub">Videos processed</div>
+      </div>
+      <div class="result-card">
+        <div class="r-label">Ambulance Events</div>
+        <div class="r-value">{{ stats.ambulance }}</div>
+        <div class="r-sub">Emergency overrides</div>
+      </div>
+      <div class="result-card">
+        <div class="r-label">Avg Vehicles/Run</div>
+        <div class="r-value">{{ stats.avg_vehicles }}</div>
+        <div class="r-sub">Across all lanes</div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="chart-container">
+      <h3>Recent Analyses</h3>
+
+      {% if rows %}
+      <table class="hist-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date & Time</th>
+            <th>Lane Counts</th>
+            <th>Lane Viz</th>
+            <th>Green Signal</th>
+            <th>Green Time</th>
+            <th>Ambulance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          {% set counts = [row[3], row[4], row[5], row[6]] %}
+          {% set max_c  = counts | max %}
+          <tr>
+            <td style="color:var(--muted)">{{ loop.index }}</td>
+            <td style="color:var(--muted);font-size:12px">{{ row[2] }}</td>
+            <td>
+              L1:<b>{{ row[3] }}</b>&nbsp;
+              L2:<b>{{ row[4] }}</b>&nbsp;
+              L3:<b>{{ row[5] }}</b>&nbsp;
+              L4:<b>{{ row[6] }}</b>
+            </td>
+            <td>
+              <div class="mini-bars">
+                {% for c in counts %}
+                {% set h = ((c / max_c * 22) | int) if max_c > 0 else 4 %}
+                <div class="mini-bar {% if c == max_c %}top{% endif %}" style="height:{{ h }}px"></div>
+                {% endfor %}
+              </div>
+            </td>
+            <td>
+              {% if row[10] %}
+              <span class="badge-red">🚑 ALL GREEN</span>
+              {% else %}
+              <span class="badge-green">Lane {{ row[8] }}</span>
+              {% endif %}
+            </td>
+            <td>{{ row[9] }}s</td>
+            <td>
+              {% if row[10] %}
+              <span class="badge-red">🚨 YES</span>
+              {% else %}
+              <span style="color:var(--muted);font-size:12px">No</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% else %}
+      <div class="empty-state">
+        <div class="e-icon">📭</div>
+        <p>No analyses yet. Go to the <a href="/dashboard" style="color:var(--accent)">Dashboard</a> and upload a traffic video.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

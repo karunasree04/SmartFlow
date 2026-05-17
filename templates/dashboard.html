@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — ITMS</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.ambulance-alert {
+  background: rgba(239,68,68,0.12);
+  border: 2px solid rgba(239,68,68,0.5);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  animation: pulse-border 1.5s infinite;
+}
+@keyframes pulse-border {
+  0%,100% { border-color: rgba(239,68,68,0.5); }
+  50%      { border-color: rgba(239,68,68,1); box-shadow: 0 0 20px rgba(239,68,68,0.3); }
+}
+.amb-icon  { font-size: 40px; }
+.amb-title { font-size: 20px; font-weight: 700; color: #ef4444; }
+.amb-sub   { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.timer-badge {
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 10px;
+  padding: 12px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.timer-num  { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--green); }
+.timer-label{ font-size: 12px; color: var(--muted); }
+.welcome-bar {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.welcome-bar h2 { font-size: 16px; font-weight: 600; }
+.welcome-bar p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <span class="logo-badge">ITMS</span>
+    <div class="logo-texts">
+      <span class="logo-text">Traffic Management</span>
+      <span class="logo-sub">Intelligent Signal Control</span>
+    </div>
+  </a>
+  <ul class="navbar-links">
+    <li><a href="/dashboard" class="btn-nav">🚦 Dashboard</a></li>
+    <li><a href="/history">History</a></li>
+    <li><a href="/pathfinder">Path Finder</a></li>
+    <li><a href="/logout">Sign Out</a></li>
+  </ul>
+</nav>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <span class="sidebar-label">Navigation</span>
+    <a href="/dashboard"  class="sidebar-link active"><span class="s-icon">🚦</span> Dashboard</a>
+    <a href="/history"    class="sidebar-link"><span class="s-icon">📊</span> History</a>
+    <a href="/pathfinder" class="sidebar-link"><span class="s-icon">🗺️</span> Path Finder</a>
+    <span class="sidebar-label" style="margin-top:20px;display:block">Algorithms</span>
+    <a href="/pathfinder" class="sidebar-link"><span class="s-icon">📐</span> Dijkstra</a>
+    <a href="#algo-section" class="sidebar-link"><span class="s-icon">📦</span> Priority Queue</a>
+    <span class="sidebar-label" style="margin-top:20px;display:block">Account</span>
+    <a href="/logout" class="sidebar-link"><span class="s-icon">🚪</span> Logout</a>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- WELCOME -->
+    <div class="welcome-bar">
+      <div>
+        <h2>👋 Welcome back, {{ user_name }}!</h2>
+        <p>Upload a traffic video to run detection and get signal decisions.</p>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--muted)">Total Analyses</div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--accent)">{{ stats.total }}</div>
+      </div>
+    </div>
+
+    <!-- QUICK STATS -->
+    <div class="result-grid" style="margin-bottom:28px">
+      <div class="result-card">
+        <div class="r-label">Total Analyses</div>
+        <div class="r-value">{{ stats.total }}</div>
+        <div class="r-sub">Videos processed</div>
+      </div>
+      <div class="result-card">
+        <div class="r-label">Ambulance Events</div>
+        <div class="r-value">{{ stats.ambulance }}</div>
+        <div class="r-sub">Emergency overrides triggered</div>
+      </div>
+      <div class="result-card">
+        <div class="r-label">Avg Vehicles</div>
+        <div class="r-value">{{ stats.avg_vehicles }}</div>
+        <div class="r-sub">Per analysis</div>
+      </div>
+    </div>
+
+    <!-- UPLOAD -->
+    <form method="POST" enctype="multipart/form-data" id="upload-form">
+      <div class="upload-area" id="upload-area">
+        <div class="upload-icon">🎥</div>
+        <h3 id="file-label">Drop traffic video here or click to browse</h3>
+        <p>MP4 format &nbsp;·&nbsp; YOLOv5 detects cars, buses, trucks, motorbikes &amp; ambulances</p>
+        <input id="video-input" type="file" name="video" accept="video/*" required>
+        <button type="submit" class="btn btn-primary" onclick="event.stopPropagation()">
+          🚀 Upload &amp; Analyze
+        </button>
+      </div>
+    </form>
+
+    {% if result %}
+
+    <!-- AMBULANCE ALERT -->
+    {% if result.ambulance %}
+    <div class="ambulance-alert">
+      <div class="amb-icon">🚨</div>
+      <div>
+        <div class="amb-title">AMBULANCE DETECTED — ALL LANES GREEN</div>
+        <div class="amb-sub">Emergency vehicle override activated. All signals set to green immediately.</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- RESULT CARDS -->
+    <div class="result-grid">
+      <div class="result-card">
+        <div class="r-label">Total Vehicles</div>
+        <div class="r-value">{{ result.lane_counts | sum }}</div>
+        <div class="r-sub">Across all 4 lanes</div>
+      </div>
+      <div class="result-card">
+        <div class="r-label">Busiest Lane</div>
+        <div class="r-value">Lane {{ result.lane_counts.index(result.lane_counts | max) + 1 }}</div>
+        <div class="r-sub">{{ result.lane_counts | max }} vehicles detected</div>
+      </div>
+      <div class="result-card">
+        <div class="r-label">Signal Decision</div>
+        {% if result.ambulance %}
+        <div class="verdict red">🚨 ALL GREEN</div>
+        {% else %}
+        <div class="verdict green">✅ {{ result.decision }}</div>
+        {% endif %}
+      </div>
+      {% if not result.ambulance %}
+      <div class="result-card">
+        <div class="r-label">Recommended Green Time</div>
+        <div class="timer-badge">
+          <div>
+            <div class="timer-num">{{ result.green_time }}s</div>
+            <div class="timer-label">For Lane {{ result.green_lane + 1 }}</div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- LANE BAR VISUALIZER -->
+    <div class="result-card" style="margin-top:20px">
+      <div class="r-label">Lane Density Visualizer</div>
+      <div class="lane-bars">
+        {% set max_count = result.lane_counts | max %}
+        {% for count in result.lane_counts %}
+        {% set pct = ((count / max_count * 72) | int) if max_count > 0 else 8 %}
+        <div class="lane-bar-wrap">
+          <div class="lane-bar {% if loop.index0 == result.lane_counts.index(max_count) %}active{% endif %}"
+               style="height:{{ pct }}px"></div>
+          <span class="lane-label">L{{ loop.index }}<br>{{ count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-container">
+      <h3>Vehicle Count Per Lane</h3>
+      <canvas id="trafficChart" height="70"></canvas>
+    </div>
+
+    <!-- VIDEO -->
+    <div class="video-wrap">
+      <video controls autoplay muted loop>
+        <source src="/static/{{ result.video }}" type="video/mp4">
+      </video>
+      <div class="video-label">📹 Processed Output — YOLOv5 Detection with Bounding Boxes</div>
+    </div>
+
+    <!-- QUICK LINK TO PATH FINDER -->
+    <div style="margin-top:24px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:var(--radius);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-weight:600;margin-bottom:4px">🗺️ See Smart Path Finder</div>
+        <div style="font-size:13px;color:var(--muted)">Use Dijkstra to find the best route — avoiding the congested lanes detected above</div>
+      </div>
+      <a href="/pathfinder" class="btn btn-primary">Open Path Finder →</a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    const laneCounts = {{ result.lane_counts | tojson | safe }};
+    const maxIdx = laneCounts.indexOf(Math.max(...laneCounts));
+    const colors  = laneCounts.map((_,i) => i===maxIdx ? 'rgba(34,197,94,0.85)' : 'rgba(0,212,255,0.55)');
+    const borders = laneCounts.map((_,i) => i===maxIdx ? '#22c55e' : '#00d4ff');
+
+    new Chart(document.getElementById('trafficChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Lane 1','Lane 2','Lane 3','Lane 4'],
+        datasets:[{
+          label: 'Vehicle Count',
+          data: laneCounts,
+          backgroundColor: colors,
+          borderColor: borders,
+          borderWidth: 2,
+          borderRadius: 8,
+        }]
+      },
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{ labels:{ color:'#94a3b8', font:{ family:'Inter' } } },
+          tooltip:{ callbacks:{ afterLabel: ctx => ctx.dataIndex===maxIdx ? '← GREEN SIGNAL' : '' } }
+        },
+        scales:{
+          x:{ ticks:{ color:'#94a3b8' }, grid:{ color:'rgba(255,255,255,0.04)' } },
+          y:{ ticks:{ color:'#94a3b8' }, grid:{ color:'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+    </script>
+
+    {% endif %}
+
+    <!-- ALGO SECTION -->
+    <div id="algo-section" style="margin-top:52px">
+      <div class="page-header">
+        <h1>Algorithms Reference</h1>
+        <p>Implemented in Python (<code style="background:rgba(0,212,255,0.1);color:var(--accent);padding:2px 6px;border-radius:5px;font-size:12px">algorithms.py</code>) and C (<code style="background:rgba(0,212,255,0.1);color:var(--accent);padding:2px 6px;border-radius:5px;font-size:12px">programs.c</code>)</p>
+      </div>
+      <div class="algo-card">
+        <h3>📦 Priority Queue — Max-Heap</h3>
+        <p>Lane vehicle counts × 10 = priority score. Pushed into max-heap. <code style="background:rgba(0,212,255,0.1);color:var(--accent);padding:2px 6px;border-radius:5px;font-size:12px">get_highest_priority()</code> pops the most congested lane in O(log n). That lane gets the green signal.</p>
+        <div class="complexity-badges">
+          <span class="c-badge time">⏱ Insert: O(log n)</span>
+          <span class="c-badge time">⏱ Extract-Max: O(log n)</span>
+          <span class="c-badge space">💾 Space: O(n)</span>
+        </div>
+      </div>
+      <div class="algo-card">
+        <h3>🗺️ Dijkstra's Shortest Path</h3>
+        <p>Models road network as weighted graph. Greedily picks nearest unvisited node using min-heap, relaxes edges to find shortest path. Smart Route adds congestion penalty to avoid heavy lanes — exactly like Google Maps.</p>
+        <div class="complexity-badges">
+          <span class="c-badge time">⏱ Time: O((V+E) log V)</span>
+          <span class="c-badge space">💾 Space: O(V)</span>
+        </div>
+      </div>
+      <div class="algo-card">
+        <h3>👁 YOLOv5 Object Detection</h3>
+        <p>Pretrained on COCO dataset. Scans each frame once (You Only Look Once), returns bounding boxes + class labels. Vehicle center-X mapped to lane. Ambulance triggers emergency override.</p>
+        <div class="complexity-badges">
+          <span class="c-badge time">⏱ Real-time per frame</span>
+          <span class="c-badge space">💾 YOLOv5s: ~14MB</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<footer>Built for DAA Project — ITMS &nbsp;|&nbsp; YOLOv5 + Priority Queue + Dijkstra</footer>
+
+<script src="/static/script.js"></script>
+</body>
+</html>

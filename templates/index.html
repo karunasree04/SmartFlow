@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITMS — Intelligent Traffic Management System</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <span class="logo-badge">ITMS</span>
+    <div class="logo-texts">
+      <span class="logo-text">Traffic Management</span>
+      <span class="logo-sub">Intelligent Signal Control</span>
+    </div>
+  </a>
+  <ul class="navbar-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#algorithms">Algorithms</a></li>
+    <li><a href="#tech">Tech Stack</a></li>
+    <li><a href="/login" class="btn-nav">Get Started →</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">🎓 DAA Project — Batch 2024</div>
+  <h1>Intelligent <span>Traffic Signal</span><br>Management System</h1>
+  <p>Real-time vehicle detection using YOLOv5 combined with Priority Queue &amp; Dijkstra's algorithm to dynamically control traffic signals and find smart routes — just like Google Maps.</p>
+  <div class="hero-btns">
+    <a href="/login"   class="btn btn-primary">🚦 Launch Dashboard</a>
+    <a href="#algorithms" class="btn btn-outline">📐 View Algorithms</a>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-item">
+    <div class="stat-value">4</div>
+    <div class="stat-label">Lanes Monitored</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">YOLOv5</div>
+    <div class="stat-label">Object Detection Model</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">O(log n)</div>
+    <div class="stat-label">Priority Queue Complexity</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">Dijkstra</div>
+    <div class="stat-label">Smart Path Finding</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">✨ What It Does</div>
+  <h2>Project Features</h2>
+  <p class="sub">A complete traffic management platform — signal control, smart routing, history analytics, and more.</p>
+  <div class="cards">
+    <div class="card">
+      <div class="icon">🎥</div>
+      <h3>Video-Based Detection</h3>
+      <p>Upload traffic footage. YOLOv5 detects cars, buses, trucks, motorbikes and ambulances frame-by-frame.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🚦</div>
+      <h3>Dynamic Signal Control</h3>
+      <p>Priority Queue (Max-Heap) picks the most congested lane in O(log n). That lane gets the green signal.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🚑</div>
+      <h3>Ambulance Override</h3>
+      <p>Emergency vehicles trigger a flashing red alert and instantly set all lanes to green.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🗺️</div>
+      <h3>Google Maps Style Path Finder</h3>
+      <p>Dijkstra finds shortest + smart routes on a visual road map. Smart Route avoids congested lanes — just like Google Maps avoids traffic.</p>
+    </div>
+    <div class="card">
+      <div class="icon">⏱️</div>
+      <h3>Green Time Calculator</h3>
+      <p>Automatically calculates how many seconds the green signal should stay on based on vehicle count.</p>
+    </div>
+    <div class="card">
+      <div class="icon">📊</div>
+      <h3>History & Analytics</h3>
+      <p>Every analysis is saved. View past results in a table with mini lane visualizers, timestamps and stats.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="section" style="padding-top:0">
+  <div class="section-label">⚙️ System Flow</div>
+  <h2>How It Works</h2>
+  <div class="pipeline">
+    <div class="pipeline-step"><div class="step-num">STEP 01</div><h4>Upload Video</h4><p>MP4 traffic footage</p></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step"><div class="step-num">STEP 02</div><h4>YOLOv5 Detect</h4><p>Frame-by-frame</p></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step"><div class="step-num">STEP 03</div><h4>Count per Lane</h4><p>4-lane split</p></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step"><div class="step-num">STEP 04</div><h4>Priority Queue</h4><p>Max-heap ranking</p></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step"><div class="step-num">STEP 05</div><h4>Signal Decision</h4><p>Green lane + timer</p></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step"><div class="step-num">STEP 06</div><h4>Path Finder</h4><p>Dijkstra routing</p></div>
+  </div>
+</section>
+
+<!-- ALGORITHMS -->
+<section class="section" id="algorithms">
+  <div class="section-label">📐 DAA Core</div>
+  <h2>Algorithms Used</h2>
+  <p class="sub">Two classic DAA algorithms implemented end-to-end in Python and C — with visual demonstration.</p>
+  <div class="cards" style="margin-bottom:20px">
+    <div class="card">
+      <div class="icon">📦</div>
+      <h3>Priority Queue (Max-Heap)</h3>
+      <p>Lane counts → priority scores → max-heap → pop most congested lane in O(log n) → green signal decision.</p>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <span class="c-badge time">Time: O(log n)</span>
+        <span class="c-badge space">Space: O(n)</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="icon">🗺️</div>
+      <h3>Dijkstra's Algorithm</h3>
+      <p>Road network as weighted graph. Greedy min-heap finds shortest path + smart congestion-aware route on a visual Google Maps style interface.</p>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <span class="c-badge time">Time: O((V+E)logV)</span>
+        <span class="c-badge space">Space: O(V)</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon">🔧</div>
+    <h3>Dual Implementation — Python + C</h3>
+    <p>Both algorithms in <code style="background:rgba(0,212,255,0.1);color:var(--accent);padding:2px 6px;border-radius:5px;font-size:12px">algorithms.py</code> for the live app, and manually in <code style="background:rgba(0,212,255,0.1);color:var(--accent);padding:2px 6px;border-radius:5px;font-size:12px">programs.c</code> with heapify_up, heapify_down, and adjacency matrix Dijkstra from scratch — proving understanding at both high and systems level.</p>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section class="section" id="tech" style="padding-top:0">
+  <div class="section-label">🛠 Built With</div>
+  <h2>Tech Stack</h2>
+  <div class="tech-grid">
+    <span class="tech-badge">🐍 Python 3.11</span>
+    <span class="tech-badge">🌶 Flask</span>
+    <span class="tech-badge">👁 YOLOv5 (PyTorch)</span>
+    <span class="tech-badge">📷 OpenCV</span>
+    <span class="tech-badge">🗄 SQLite3</span>
+    <span class="tech-badge">📊 Chart.js</span>
+    <span class="tech-badge">🎨 Canvas API</span>
+    <span class="tech-badge">🔣 C (algorithms)</span>
+    <span class="tech-badge">🌐 HTML5 + CSS3 + JS</span>
+  </div>
+</section>
+
+<footer>Built for DAA Project — Intelligent Traffic Management System &nbsp;|&nbsp; YOLOv5 + Priority Queue + Dijkstra</footer>
+
+</body>
+</html>

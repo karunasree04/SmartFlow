@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Path Finder — ITMS</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+/* ── PATH FINDER PAGE STYLES ── */
+.map-wrap {
+  background: #0d1520;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-top: 24px;
+  position: relative;
+}
+.map-canvas-wrap { position: relative; width: 100%; overflow-x: auto; }
+#mapCanvas {
+  display: block;
+  border-radius: 10px;
+  background: #0a1628;
+  width: 100%;
+  max-width: 1000px;
+  cursor: default;
+}
+.controls-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+.ctrl-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.ctrl-group select {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  cursor: pointer;
+}
+.ctrl-group select:focus { border-color: var(--accent); }
+
+/* result panels */
+.path-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+.path-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.path-card.shortest { border-color: rgba(0,212,255,0.4); }
+.path-card.smart    { border-color: rgba(34,197,94,0.4); }
+.path-card h3 {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.path-card.shortest h3 { color: var(--accent); }
+.path-card.smart    h3 { color: var(--green); }
+.path-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.path-node {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.path-arrow { color: var(--muted); font-size: 16px; }
+.path-card.shortest .path-node { border-color: rgba(0,212,255,0.3); color: var(--accent); }
+.path-card.smart    .path-node { border-color: rgba(34,197,94,0.3); color: var(--green); }
+.dist-badge {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+}
+.dist-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.legend-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.legend-dot  { width: 14px; height: 14px; border-radius: 50%; }
+.hint-box {
+  background: rgba(0,212,255,0.06);
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 16px;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <span class="logo-badge">ITMS</span>
+    <div class="logo-texts">
+      <span class="logo-text">Traffic Management</span>
+      <span class="logo-sub">Intelligent Signal Control</span>
+    </div>
+  </a>
+  <ul class="navbar-links">
+    <li><a href="/dashboard">Dashboard</a></li>
+    <li><a href="/history">History</a></li>
+    <li><a href="/pathfinder" class="btn-nav">🗺️ Path Finder</a></li>
+    <li><a href="/logout">Sign Out</a></li>
+  </ul>
+</nav>
+
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <span class="sidebar-label">Navigation</span>
+    <a href="/dashboard"   class="sidebar-link"><span class="s-icon">🚦</span> Dashboard</a>
+    <a href="/history"     class="sidebar-link"><span class="s-icon">📊</span> History</a>
+    <a href="/pathfinder"  class="sidebar-link active"><span class="s-icon">🗺️</span> Path Finder</a>
+    <span class="sidebar-label" style="margin-top:20px;display:block">Algorithms</span>
+    <a href="/pathfinder"  class="sidebar-link"><span class="s-icon">📐</span> Dijkstra</a>
+    <a href="/dashboard"   class="sidebar-link"><span class="s-icon">📦</span> Priority Queue</a>
+    <span class="sidebar-label" style="margin-top:20px;display:block">Account</span>
+    <a href="/logout"      class="sidebar-link"><span class="s-icon">🚪</span> Logout</a>
+  </aside>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1>🗺️ Smart Path Finder</h1>
+      <p>Google Maps style shortest path using <strong>Dijkstra's Algorithm</strong>. The Smart Route avoids congested roads — just like real navigation apps.</p>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls-row">
+      <div class="ctrl-group">
+        <label>📍 Start Location</label>
+        <select id="startNode">
+          {% for n in nodes %}
+          <option value="{{ n }}">{{ n }} — {{ node_labels[n] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>🏁 End Location</label>
+        <select id="endNode">
+          {% for n in nodes %}
+          <option value="{{ n }}" {% if loop.last %}selected{% endif %}>{{ n }} — {{ node_labels[n] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>&nbsp;</label>
+        <button class="btn btn-primary" onclick="findPath()">🚀 Find Path</button>
+      </div>
+    </div>
+
+    <!-- MAP CANVAS -->
+    <div class="map-wrap">
+      <div class="map-canvas-wrap">
+        <canvas id="mapCanvas" width="1000" height="480"></canvas>
+      </div>
+
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot" style="background:#1e3a5f"></div> Road</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00d4ff"></div> Shortest Path</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Smart Route (avoids traffic)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Congested Road</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div> Start / End Node</div>
+      </div>
+
+      <div class="hint-box">
+        💡 <strong>How it works:</strong> <em>Shortest Path</em> uses only road distances. <em>Smart Route</em> adds congestion weights from your latest traffic analysis — so it avoids heavy lanes, exactly like Google Maps avoids traffic jams.
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="path-results" id="pathResults" style="display:none">
+      <div class="path-card shortest">
+        <h3>🔵 Shortest Path (Distance Only)</h3>
+        <div class="path-steps" id="shortSteps"></div>
+        <div class="dist-badge" id="shortDist"></div>
+        <div class="dist-label">Total distance units</div>
+      </div>
+      <div class="path-card smart">
+        <h3>🟢 Smart Route (Avoids Traffic)</h3>
+        <div class="path-steps" id="smartSteps"></div>
+        <div class="dist-badge" id="smartDist"></div>
+        <div class="dist-label">Total weighted cost</div>
+      </div>
+    </div>
+
+    <!-- ALGORITHM EXPLANATION -->
+    <div class="algo-card" style="margin-top:32px">
+      <h3>📐 How Dijkstra Works Here</h3>
+      <p>
+        The road network has <strong>8 intersections (nodes)</strong> and <strong>11 roads (edges)</strong> with distance weights.
+        Dijkstra starts at your selected source, maintains a min-heap of (distance, node) pairs,
+        and greedily visits the closest unvisited node at every step — relaxing all its edges.
+        This guarantees the globally shortest path is found when the destination is reached.<br><br>
+        The <strong>Smart Route</strong> adds a congestion penalty to certain roads based on your
+        latest vehicle count analysis — so the algorithm naturally avoids those roads, finding
+        a longer but faster real-world path. This is exactly how Google Maps, Apple Maps,
+        and Waze work in real life.
+      </p>
+      <div class="complexity-badges">
+        <span class="c-badge time">⏱ Time: O((V+E) log V)</span>
+        <span class="c-badge space">💾 Space: O(V)</span>
+        <span class="c-badge time">V = 8 nodes &nbsp; E = 11 edges</span>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── NODE POSITIONS & NETWORK ──────────────────────────────────
+const NODES = {
+  A: {x:80,  y:280, label:'Main Gate'},
+  B: {x:260, y:140, label:'City Center'},
+  C: {x:460, y:80,  label:'Hospital'},
+  D: {x:260, y:300, label:'Market Jn'},
+  E: {x:460, y:300, label:'College Rd'},
+  F: {x:660, y:160, label:'Bus Stand'},
+  G: {x:660, y:380, label:'Railway Stn'},
+  H: {x:860, y:280, label:'Airport Rd'},
+};
+
+const EDGES = [
+  ['A','B',4],['A','D',3],['B','C',5],['B','D',2],['B','F',8],
+  ['C','F',4],['D','E',6],['E','F',3],['E','G',5],['F','H',4],['G','H',3]
+];
+
+const canvas = document.getElementById('mapCanvas');
+const ctx    = canvas.getContext('2d');
+
+let currentResult = null;
+
+function drawMap(highlightShort=[], highlightSmart=[], congestion={}, startN='', endN='') {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Background grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for(let x=0;x<W;x+=50){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke(); }
+  for(let y=0;y<H;y+=50){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke(); }
+
+  // Draw all edges
+  EDGES.forEach(([u,v,w]) => {
+    const a=NODES[u], b=NODES[v];
+    const inShort = isInPath(u,v,highlightShort);
+    const inSmart = isInPath(u,v,highlightSmart);
+    const isCong  = congestion[u+v] || congestion[v+u];
+
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+
+    if (inSmart && inShort) {
+      // Both paths share this edge — draw green (smart dominates)
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth   = 5;
+      ctx.setLineDash([]);
+    } else if (inShort) {
+      ctx.strokeStyle = '#00d4ff';
+      ctx.lineWidth   = 4;
+      ctx.setLineDash([]);
+    } else if (inSmart) {
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth   = 4;
+      ctx.setLineDash([8,4]);
+    } else if (isCong) {
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth   = 2;
+      ctx.setLineDash([5,5]);
+    } else {
+      ctx.strokeStyle = '#1e3a5f';
+      ctx.lineWidth   = 2;
+      ctx.setLineDash([]);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Edge weight label
+    const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+    ctx.fillStyle = isCong ? '#f59e0b' : 'rgba(255,255,255,0.4)';
+    ctx.font      = 'bold 11px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText(w, mx, my-6);
+  });
+
+  // Draw nodes
+  Object.entries(NODES).forEach(([key, n]) => {
+    const isStart = key === startN;
+    const isEnd   = key === endN;
+    const inPath  = highlightShort.includes(key) || highlightSmart.includes(key);
+
+    // Outer glow
+    if (isStart || isEnd || inPath) {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, 20, 0, Math.PI*2);
+      ctx.fillStyle = isStart||isEnd ? 'rgba(124,58,237,0.2)' : 'rgba(0,212,255,0.15)';
+      ctx.fill();
+    }
+
+    // Node circle
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, 13, 0, Math.PI*2);
+    if (isStart || isEnd) {
+      ctx.fillStyle = '#7c3aed';
+      ctx.strokeStyle = '#a78bfa';
+    } else if (inPath) {
+      ctx.fillStyle = '#0e3a5a';
+      ctx.strokeStyle = '#00d4ff';
+    } else {
+      ctx.fillStyle = '#111827';
+      ctx.strokeStyle = '#1e3a5f';
+    }
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
+
+    // Node key label
+    ctx.fillStyle = isStart||isEnd ? '#fff' : inPath ? '#00d4ff' : '#94a3b8';
+    ctx.font      = 'bold 13px Space Grotesk';
+    ctx.textAlign = 'center';
+    ctx.fillText(key, n.x, n.y+5);
+
+    // Node name below
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font      = '10px Inter';
+    ctx.fillText(n.label, n.x, n.y+28);
+  });
+}
+
+function isInPath(u, v, path) {
+  for(let i=0;i<path.length-1;i++){
+    if((path[i]===u&&path[i+1]===v)||(path[i]===v&&path[i+1]===u)) return true;
+  }
+  return false;
+}
+
+function renderPathSteps(steps, containerId) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  steps.forEach((node,i) => {
+    const span = document.createElement('span');
+    span.className = 'path-node';
+    const label = NODES[node] ? NODES[node].label : node;
+    span.textContent = `${node} (${label})`;
+    el.appendChild(span);
+    if(i < steps.length-1) {
+      const arr = document.createElement('span');
+      arr.className = 'path-arrow';
+      arr.textContent = '→';
+      el.appendChild(arr);
+    }
+  });
+}
+
+async function findPath() {
+  const start = document.getElementById('startNode').value;
+  const end   = document.getElementById('endNode').value;
+
+  if(start === end) { alert('Please select different start and end locations!'); return; }
+
+  const btn = document.querySelector('.btn-primary');
+  btn.textContent = '⏳ Finding...';
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch('/api/findpath', {
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({start, end, lane_counts:[5,12,3,8]})
+    });
+    const data = await res.json();
+    currentResult = data;
+
+    // Draw map
+    drawMap(data.short_path, data.smart_path, data.congestion, start, end);
+
+    // Show result panels
+    document.getElementById('pathResults').style.display = 'grid';
+    renderPathSteps(data.short_path, 'shortSteps');
+    renderPathSteps(data.smart_path, 'smartSteps');
+    document.getElementById('shortDist').textContent = data.short_dist + ' units';
+    document.getElementById('smartDist').textContent = data.smart_dist + ' units';
+
+  } catch(e) {
+    alert('Error finding path. Please try again.');
+  }
+
+  btn.textContent = '🚀 Find Path';
+  btn.disabled = false;
+}
+
+// Initial draw
+drawMap();
+</script>
+
+</body>
+</html>
